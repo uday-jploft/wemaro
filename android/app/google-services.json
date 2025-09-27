@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1049522217155",
+    "project_id": "wemaro-19887",
+    "storage_bucket": "wemaro-19887.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1049522217155:android:908d8ead60fe6381dc0276",
+        "android_client_info": {
+          "package_name": "com.wemaro.app.wemaro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCqH4pxVz23a6Y_FyjWBi4MklYrPUZ5sQI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
