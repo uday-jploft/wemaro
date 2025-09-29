@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -71,9 +72,10 @@ class AuthNotifier extends Notifier<AuthState> {
     );
   }
 
-  Future<void> login(String email, String password) async {
+  Future<void> login(context,String email, String password) async {
     // Start loading
     state = state.copyWith(isLoading: true, error: null);
+
 
 
     // Input validation
@@ -93,6 +95,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
     // Mock authentication
     if (email.isNotEmpty && password.isNotEmpty) {
+      print("cscd");
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_isLoggedInKey, true);
       state = state.copyWith(
@@ -101,6 +104,9 @@ class AuthNotifier extends Notifier<AuthState> {
         profile: Profile.fromMock(email, _mockDisplayName),
         error: null,
       );
+      print("cscd");
+        // This callback will be passed from main.dart
+        Navigator.of(context).pushReplacementNamed('/auth_check');
     } else {
       state = state.copyWith(
         isLoading: false,

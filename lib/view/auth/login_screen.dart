@@ -36,7 +36,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
 
   void _login() {
     if (_formKey.currentState!.validate()) {
-      ref.read(authProvider.notifier).login(_emailController.text, _passwordController.text);
+      ref.read(authProvider.notifier).login(context,_emailController.text, _passwordController.text);
     }
   }
 

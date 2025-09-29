@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wemaro/view/call/meeting_screen.dart';
-import 'package:wemaro/view/user_list_screen.dart';
+import 'package:wemaro/view/user_list/user_list_screen.dart';
 import 'package:wemaro/view/widgets/feature_card.dart';
 import 'package:wemaro/view/widgets/gradiaent_button.dart';
 

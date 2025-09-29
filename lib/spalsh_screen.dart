@@ -204,9 +204,10 @@ class _SplashScreenState extends State<SplashScreen>
                 Container(
                   width: 120,
                   height: 120,
+                  clipBehavior: Clip.antiAliasWithSaveLayer,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(22),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.2),
@@ -215,11 +216,13 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.video_call,
-                    size: 60,
-                    color: Color(0xFF2196F3),
-                  ),
+
+                  child: Image.asset("assets/app_logo.png"),
+                  // child: const Icon(
+                  //   Icons.video_call,
+                  //   size: 60,
+                  //   color: Color(0xFF2196F3),
+                  // ),
                 ),
 
                 const SizedBox(height: 24),
