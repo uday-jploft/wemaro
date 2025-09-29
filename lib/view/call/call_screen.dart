@@ -295,11 +295,16 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
           case RTCIceConnectionState.RTCIceConnectionStateDisconnected:
             connectionStatus = 'Reconnecting...';
             isCallConnected = false;
+            // Handle disconnection
+            if (remoteJoined) {
+              _handleRemoteDisconnect('Remote user disconnected');
+            }
             break;
           case RTCIceConnectionState.RTCIceConnectionStateFailed:
             connectionStatus = 'Connection failed';
             isConnecting = false;
             isCallConnected = false;
+            _handleRemoteDisconnect('Connection failed');
             break;
           case RTCIceConnectionState.RTCIceConnectionStateCompleted:
             connectionStatus = 'Connected';
@@ -404,6 +409,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
         remoteJoined = false;
         connectionStatus = 'Remote disconnected';
       });
+      _handleRemoteDisconnect('Remote user left the call');
     };
 
     _pc!.onIceCandidate = (candidate) {
@@ -467,11 +473,24 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     _roomSub = roomRef.snapshots().listen((snapshot) async {
       try {
         final data = snapshot.data();
-        if (data == null) {
-          print('Room data is null');
+        if (data == null || !snapshot.exists) {
+          print('Room deleted or no data, remote user likely left');
+          _handleRemoteDisconnect('Remote user left the call');
           return;
         }
         print('Room data updated: ${data.keys}');
+
+        // Check if remote user's signaling data is removed
+        if (widget.isCaller && data.containsKey('answer') == false && remoteJoined) {
+          print('Answer removed, remote user left');
+          _handleRemoteDisconnect('Remote user left the call');
+          return;
+        }
+        if (!widget.isCaller && data.containsKey('offer') == false && remoteJoined) {
+          print('Offer removed, remote user left');
+          _handleRemoteDisconnect('Remote user left the call');
+          return;
+        }
 
         if (!widget.isCaller && data.containsKey('offer') && (await _pc!.getRemoteDescription()) == null) {
           print('Processing offer...');
@@ -675,6 +694,29 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     }
   }
 
+  // New method to handle remote user disconnection
+  void _handleRemoteDisconnect(String message) async {
+    print('Remote user disconnected: $message');
+    setState(() {
+      connectionStatus = message;
+      remoteJoined = false;
+      isCallConnected = false;
+    });
+
+    // Show disconnection message
+    _showQuickFeedback(message);
+
+    // Clean up resources
+    await _cleanup();
+
+    // Navigate back to home screen after a short delay to show the message
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    });
+  }
+
   Future<void> _toggleMute() async {
     if (_localStream != null) {
       final audioTracks = _localStream!.getAudioTracks();
@@ -777,6 +819,12 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       await _pc?.close();
       _pc = null;
 
+      // Delete the room from Firestore to clean up
+      final roomRef = FirebaseFirestore.instance.collection('rooms').doc(widget.roomId);
+      await roomRef.delete().catchError((error) {
+        print('Error deleting room: $error');
+      });
+
       setState(() {
         remoteJoined = false;
         isConnecting = false;
@@ -874,7 +922,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                       fontSize: 14,
                     ),
                   ),
-                  const Icon(Icons.copy,color: Colors.white54,size: 18,),
+                  const Icon(Icons.copy, color: Colors.white54, size: 18),
                 ],
               ),
             ),

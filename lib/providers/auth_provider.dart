@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// Profile model to hold user details
 class Profile {
   final String uid;
   final String? email;
@@ -13,34 +12,37 @@ class Profile {
     this.displayName,
   });
 
-  factory Profile.fromFirebaseUser(User user) {
+  factory Profile.fromMock(String email, String displayName) {
     return Profile(
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName,
+      uid: DateTime.now().millisecondsSinceEpoch.toString(), // Mock UID
+      email: email,
+      displayName: displayName,
     );
   }
 }
 
-/// State to manage auth + profile
 class AuthState {
   final bool isLoggedIn;
+  final bool isLoading;
   final String? error;
   final Profile? profile;
 
   const AuthState({
     required this.isLoggedIn,
+    this.isLoading = false,
     this.error,
     this.profile,
   });
 
   AuthState copyWith({
     bool? isLoggedIn,
+    bool? isLoading,
     String? error,
     Profile? profile,
   }) {
     return AuthState(
       isLoggedIn: isLoggedIn ?? this.isLoggedIn,
+      isLoading: isLoading ?? this.isLoading,
       error: error,
       profile: profile ?? this.profile,
     );
@@ -49,48 +51,73 @@ class AuthState {
 
 /// Auth Notifier
 class AuthNotifier extends Notifier<AuthState> {
+  static const String _isLoggedInKey = 'isLoggedIn';
+
+  static const String _mockDisplayName = 'Mock User';
+
   @override
-  AuthState build() => const AuthState(isLoggedIn: false);
+  AuthState build() {
+    // Initial synchronous state
+    return const AuthState(isLoggedIn: false);
+  }
+
+  // Load initial state asynchronously
+  Future<void> loadInitialState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isLoggedIn = prefs.getBool(_isLoggedInKey) ?? false;
+    state = AuthState(
+      isLoggedIn: isLoggedIn,
+      profile: isLoggedIn ? Profile.fromMock("user@email.com", _mockDisplayName) : null,
+    );
+  }
 
   Future<void> login(String email, String password) async {
+    // Start loading
+    state = state.copyWith(isLoading: true, error: null);
+
+
+    // Input validation
     if (email.isEmpty || password.isEmpty) {
-      state = AuthState(isLoggedIn: false, error: 'Fields cannot be empty');
+      state = state.copyWith(isLoading: false, error: 'All fields are required');
       return;
     }
-    if (!email.contains('@')) {
-      state = AuthState(isLoggedIn: false, error: 'Invalid email format');
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+      state = state.copyWith(isLoading: false, error: 'Please enter a valid email');
+      return;
+    }
+    if (password.length < 6) {
+      state = state.copyWith(isLoading: false, error: 'Password must be at least 6 characters');
       return;
     }
 
-    try {
-      final userCred = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
+
+    // Mock authentication
+    if (email.isNotEmpty && password.isNotEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_isLoggedInKey, true);
+      state = state.copyWith(
+        isLoggedIn: true,
+        isLoading: false,
+        profile: Profile.fromMock(email, _mockDisplayName),
+        error: null,
       );
-
-      final user = userCred.user;
-      if (user != null) {
-        state = AuthState(
-          isLoggedIn: true,
-          profile: Profile.fromFirebaseUser(user),
-          error: null,
-        );
-      } else {
-        state = AuthState(isLoggedIn: false, error: "User not found");
-      }
-    } on FirebaseAuthException catch (e) {
-      state = AuthState(isLoggedIn: false, error: e.message ?? 'Login failed');
-    } catch (e) {
-      state = AuthState(isLoggedIn: false, error: 'Network error: $e');
+    } else {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Invalid email or password',
+      );
     }
   }
 
   Future<void> logout() async {
-    await FirebaseAuth.instance.signOut();
-    state = const AuthState(isLoggedIn: false);
+    // Start loading
+    state = state.copyWith(isLoading: true, error: null);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_isLoggedInKey, false);
+    state = const AuthState(isLoggedIn: false, isLoading: false);
   }
 }
 
 /// Provider
-final authProvider =
-NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);
+final authProvider = NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new, dependencies: []);

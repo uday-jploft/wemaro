@@ -1,53 +1,19 @@
+
 import 'package:flutter/material.dart';
-import 'package:wemaro/screens/call_screen.dart';
-import 'package:wemaro/screens/home_screen.dart' show HomeScreeNew;
-import 'package:wemaro/screens/user_list_screen.dart';
-import 'package:wemaro/screens/video_call_screen.dart';
-import 'package:wemaro/utils/utils.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:wemaro/utils/utils.dart';
+import 'package:wemaro/view/call/call_screen.dart';
+import 'package:wemaro/view/widgets/feature_card.dart';
+import 'package:wemaro/view/widgets/gradiaent_button.dart';
 
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Home')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const UserListScreen())),
-              child: const Text('View User List'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final roomId = generateRoomId();
-                Navigator.push(context, MaterialPageRoute(builder: (_) =>  HomeScreeNew()));
-
-
-
-              },
-              child: const Text('Start Video Call'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-
-class HomeScreeNew extends StatefulWidget {
-  const HomeScreeNew({super.key});
+class MeetingScreen extends StatefulWidget {
+  const MeetingScreen({super.key});
 
   @override
-  State<HomeScreeNew> createState() => _HomeScreeNewState();
+  State<MeetingScreen> createState() => _MeetingScreenState();
 }
 
-class _HomeScreeNewState extends State<HomeScreeNew> with TickerProviderStateMixin {
+class _MeetingScreenState extends State<MeetingScreen> with TickerProviderStateMixin {
   final TextEditingController roomController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
@@ -114,7 +80,7 @@ class _HomeScreeNewState extends State<HomeScreeNew> with TickerProviderStateMix
           context,
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
-                // GroupChatRoom(roomId: roomId, userId: "user_${DateTime.now().millisecondsSinceEpoch}"),
+            // GroupChatRoom(roomId: roomId, userId: "user_${DateTime.now().millisecondsSinceEpoch}"),
             CallScreen(roomId: roomId,isCaller: true, ),
             transitionsBuilder: (context, animation, secondaryAnimation, child) {
               const begin = Offset(1.0, 0.0);
@@ -161,7 +127,7 @@ class _HomeScreeNewState extends State<HomeScreeNew> with TickerProviderStateMix
           context,
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
-                // GroupChatRoom(roomId: roomId, userId: "user_${DateTime.now().millisecondsSinceEpoch}"),
+            // GroupChatRoom(roomId: roomId, userId: "user_${DateTime.now().millisecondsSinceEpoch}"),
             CallScreen(roomId: roomId,isCaller: false, ),
             transitionsBuilder: (context, animation, secondaryAnimation, child) {
               const begin = Offset(1.0, 0.0);
@@ -257,107 +223,8 @@ class _HomeScreeNewState extends State<HomeScreeNew> with TickerProviderStateMix
 
 
 
-  Widget _buildGradientButton({
-    required String text,
-    required VoidCallback onPressed,
-    required IconData icon,
-    required List<Color> gradientColors,
-    bool isSecondary = false,
-  }) {
-    return Container(
-      width: double.infinity,
-      height: 56,
-      decoration: BoxDecoration(
-        gradient: isSecondary ? null : LinearGradient(
-          colors: gradientColors,
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: isSecondary ? Border.all(color: Colors.grey.shade300, width: 1.5) : null,
-        boxShadow: isSecondary ? null : [
-          BoxShadow(
-            color: gradientColors.first.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ElevatedButton.icon(
-        onPressed: _isLoading ? null : onPressed,
-        icon: _isLoading ? const SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-        ) : Icon(icon, color: isSecondary ? Colors.grey.shade700 : Colors.white),
-        label: Text(
-          text,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: isSecondary ? Colors.grey.shade700 : Colors.white,
-          ),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isSecondary ? Colors.white : Colors.transparent,
-          shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildFeatureCard({
-    required IconData icon,
-    required String title,
-    required String description,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            description,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey.shade600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildJoinSection() {
     return AnimatedContainer(
@@ -441,7 +308,8 @@ class _HomeScreeNewState extends State<HomeScreeNew> with TickerProviderStateMix
                   },
                 ),
                 const SizedBox(height: 16),
-                _buildGradientButton(
+                buildGradientButton(
+                  isLoading: _isLoading,
                   text: 'Join Meeting',
                   onPressed: _joinMeeting,
                   icon: Icons.videocam,
@@ -463,7 +331,7 @@ class _HomeScreeNewState extends State<HomeScreeNew> with TickerProviderStateMix
         elevation: 0,
         backgroundColor: Colors.white,
         title: const Text(
-          'Flutter WebRTC',
+          'Meeting',
           style: TextStyle(
             color: Colors.black87,
             fontWeight: FontWeight.w700,
@@ -471,33 +339,7 @@ class _HomeScreeNewState extends State<HomeScreeNew> with TickerProviderStateMix
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline, color: Colors.grey),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  title: const Text('About'),
-                  content: const Text(
-                    'Flutter WebRTC Video Calling App\n\n'
-                        '• Start instant video meetings\n'
-                        '• Join meetings with Room ID\n'
-                        '• High-quality video & audio\n'
-                        '• Cross-platform support',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('OK'),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
+
       ),
       body: FadeTransition(
         opacity: _fadeAnimation,
@@ -508,7 +350,6 @@ class _HomeScreeNewState extends State<HomeScreeNew> with TickerProviderStateMix
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Welcome section
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
@@ -550,7 +391,6 @@ class _HomeScreeNewState extends State<HomeScreeNew> with TickerProviderStateMix
 
                 const SizedBox(height: 32),
 
-                // Quick actions
                 const Text(
                   'Quick Actions',
                   style: TextStyle(
@@ -561,16 +401,18 @@ class _HomeScreeNewState extends State<HomeScreeNew> with TickerProviderStateMix
                 ),
                 const SizedBox(height: 16),
 
-                _buildGradientButton(
+                buildGradientButton(
+                  isLoading: _isLoading,
                   text: 'Start New Meeting',
                   onPressed: _startNewMeeting,
                   icon: Icons.add_call,
-                  gradientColors: [Colors.blue, Colors.blue.shade600],
+                  gradientColors: [Colors.deepOrange, Colors.deepOrangeAccent],
                 ),
 
                 const SizedBox(height: 12),
 
-                _buildGradientButton(
+                buildGradientButton(
+                  isLoading: _isLoading,
                   text: 'Join Meeting',
                   onPressed: () {
                     setState(() {
@@ -598,40 +440,7 @@ class _HomeScreeNewState extends State<HomeScreeNew> with TickerProviderStateMix
                 ),
                 const SizedBox(height: 16),
 
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.1,
-                  children: [
-                    _buildFeatureCard(
-                      icon: Icons.hd,
-                      title: 'HD Quality',
-                      description: 'Crystal clear video calls',
-                      color: Colors.purple,
-                    ),
-                    _buildFeatureCard(
-                      icon: Icons.security,
-                      title: 'Secure',
-                      description: 'End-to-end encrypted',
-                      color: Colors.green,
-                    ),
-                    _buildFeatureCard(
-                      icon: Icons.speed,
-                      title: 'Fast Connect',
-                      description: 'Quick peer connection',
-                      color: Colors.orange,
-                    ),
-                    _buildFeatureCard(
-                      icon: Icons.devices,
-                      title: 'Cross Platform',
-                      description: 'Works on all devices',
-                      color: Colors.blue,
-                    ),
-                  ],
-                ),
+                AppFeatureWidget(),
 
                 const SizedBox(height: 24),
               ],
