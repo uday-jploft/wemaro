@@ -1,6 +1,47 @@
 import 'package:flutter/material.dart';
 
 
+buildWelcomeCard(){
+  return Container(
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Colors.blue.shade900, Colors.blue.shade300],
+      ),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(
+          Icons.video_call,
+          color: Colors.white,
+          size: 40,
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          'Welcome to Video Calling',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Connect with people around the world with high-quality video calls',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.9),
+            fontSize: 14,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 class AppFeatureWidget extends StatelessWidget {
   const AppFeatureWidget({super.key});
 

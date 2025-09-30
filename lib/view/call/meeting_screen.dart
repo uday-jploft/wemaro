@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:wemaro/utils/utils.dart';
+import 'package:wemaro/core/utils/utils.dart';
 import 'package:wemaro/view/call/call_screen.dart';
 import 'package:wemaro/view/widgets/feature_card.dart';
 import 'package:wemaro/view/widgets/gradiaent_button.dart';
@@ -350,44 +350,7 @@ class _MeetingScreenState extends State<MeetingScreen> with TickerProviderStateM
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Colors.blue.shade600, Colors.blue.shade800],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.video_call,
-                        color: Colors.white,
-                        size: 40,
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Welcome to Video Calling',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Connect with people around the world with high-quality video calls',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                buildWelcomeCard(),
 
                 const SizedBox(height: 32),
 
@@ -406,7 +369,7 @@ class _MeetingScreenState extends State<MeetingScreen> with TickerProviderStateM
                   text: 'Start New Meeting',
                   onPressed: _startNewMeeting,
                   icon: Icons.add_call,
-                  gradientColors: [Colors.deepOrange, Colors.deepOrangeAccent],
+                  gradientColors: [Colors.deepOrange.shade300, Colors.deepOrange.shade600],
                 ),
 
                 const SizedBox(height: 12),

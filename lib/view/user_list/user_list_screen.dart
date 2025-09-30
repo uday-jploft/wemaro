@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:wemaro/core/data/user_data.dart';
 import 'package:wemaro/providers/user_provider.dart';
+import 'package:shimmer/shimmer.dart';
 
 class UserListScreen extends ConsumerStatefulWidget {
   const UserListScreen({super.key});
@@ -14,6 +17,7 @@ class _UserListScreenState extends ConsumerState<UserListScreen>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -32,14 +36,49 @@ class _UserListScreenState extends ConsumerState<UserListScreen>
       curve: Curves.easeInOut,
     ));
 
-    ref.read(userProvider.notifier).fetchUsers();
+    // Fetch users and check connectivity
+    _fetchUsersWithConnectivityCheck();
+  }
+
+  Future<void> _fetchUsersWithConnectivityCheck() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      // Load cached users immediately if no internet
+      await ref.read(userProvider.notifier).fetchUsers();
+      if (mounted && ref.read(userProvider).isEmpty) {
+        _showNoDataSnackBar();
+      }
+    } else {
+      await ref.read(userProvider.notifier).fetchUsers();
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
 
     // Start animation after data loads
-    Future.delayed(const Duration(milliseconds: 300), () {
+    Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted) {
         _fadeController.forward();
       }
     });
+  }
+
+  void _showNoDataSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('No internet and no cached data available'),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.red,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
   }
 
   @override
@@ -56,6 +95,9 @@ class _UserListScreenState extends ConsumerState<UserListScreen>
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        foregroundColor: Colors.transparent,
         backgroundColor: Colors.white,
         title: const Text(
           'User List',
@@ -70,55 +112,235 @@ class _UserListScreenState extends ConsumerState<UserListScreen>
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Color(0xFF1E293B)),
-            onPressed: () {
-              // Search functionality
-            },
-          ),
+          if (!_isLoading)
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Color(0xFF1E293B)),
+              onPressed: _fetchUsersWithConnectivityCheck,
+            ),
         ],
       ),
-      body: users.isEmpty
+      body: _isLoading
           ? _buildLoadingState()
+          : users.isEmpty
+          ? _buildEmptyState()
           : _buildUserList(users),
     );
   }
 
   Widget _buildLoadingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: const CircularProgressIndicator(
-              strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2196F3)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Loading header
+        Container(
+          padding: const EdgeInsets.all(20),
+          color: Colors.white,
+          child: Shimmer.fromColors(
+            baseColor: Colors.grey.shade300,
+            highlightColor: Colors.grey.shade100,
+            child: Container(
+              width: 100,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
             ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Loading users...',
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+        ),
+
+        // Loading list
+        Expanded(
+          child: ListView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            itemCount: 8,
+            itemBuilder: (context, index) {
+              return _buildLoadingCard(index);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoadingCard(int index) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
           ),
         ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Shimmer.fromColors(
+                    baseColor: Colors.grey.shade300,
+                    highlightColor: Colors.grey.shade100,
+                    child: Container(
+                      width: double.infinity,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Shimmer.fromColors(
+                    baseColor: Colors.grey.shade300,
+                    highlightColor: Colors.grey.shade100,
+                    child: Container(
+                      width: 100,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 120,
+              height: 120,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Image.asset(
+                'assets/empty_users.png', // Add your empty state image
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(
+                    Icons.people_outline,
+                    color: Color(0xFF2196F3),
+                    size: 60,
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'No Users Found',
+              style: TextStyle(
+                color: Color(0xFF1E293B),
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'There are no users available at the moment.\nPlease check back later.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 32),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [const Color(0xFF2196F3), const Color(0xFF1976D2)],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF2196F3).withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: _fetchUsersWithConnectivityCheck,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.refresh, color: Colors.white, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Retry',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -129,7 +351,6 @@ class _UserListScreenState extends ConsumerState<UserListScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header section
           Container(
             padding: const EdgeInsets.all(20),
             color: Colors.white,
@@ -163,16 +384,18 @@ class _UserListScreenState extends ConsumerState<UserListScreen>
               ],
             ),
           ),
-
-          // User list
           Expanded(
-            child: ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              itemCount: users.length,
-              itemBuilder: (context, index) {
-                return _buildUserCard(users[index], index);
-              },
+            child: RefreshIndicator(
+              onRefresh: _fetchUsersWithConnectivityCheck,
+              color: const Color(0xFF2196F3),
+              child: ListView.builder(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                itemCount: users.length,
+                itemBuilder: (context, index) {
+                  return _buildUserCard(users[index], index);
+                },
+              ),
             ),
           ),
         ],
@@ -218,7 +441,6 @@ class _UserListScreenState extends ConsumerState<UserListScreen>
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  // Avatar with gradient border
                   Hero(
                     tag: 'user_avatar_${user.id}',
                     child: Stack(
@@ -272,7 +494,6 @@ class _UserListScreenState extends ConsumerState<UserListScreen>
                             ),
                           ),
                         ),
-                        // Online indicator
                         Positioned(
                           bottom: 2,
                           right: 2,
@@ -289,10 +510,7 @@ class _UserListScreenState extends ConsumerState<UserListScreen>
                       ],
                     ),
                   ),
-
                   const SizedBox(width: 16),
-
-                  // User info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -328,10 +546,7 @@ class _UserListScreenState extends ConsumerState<UserListScreen>
                       ],
                     ),
                   ),
-
                   const SizedBox(width: 12),
-
-                  // Action button
                   Container(
                     width: 36,
                     height: 36,
@@ -367,7 +582,6 @@ class _UserListScreenState extends ConsumerState<UserListScreen>
         ),
         child: Column(
           children: [
-            // Handle bar
             Container(
               margin: const EdgeInsets.only(top: 12),
               width: 40,
@@ -377,10 +591,7 @@ class _UserListScreenState extends ConsumerState<UserListScreen>
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-
             const SizedBox(height: 24),
-
-            // Avatar
             Hero(
               tag: 'user_avatar_${user.id}',
               child: Container(
@@ -419,10 +630,7 @@ class _UserListScreenState extends ConsumerState<UserListScreen>
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // User name
             Text(
               user.name,
               style: const TextStyle(
@@ -431,10 +639,7 @@ class _UserListScreenState extends ConsumerState<UserListScreen>
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 8),
-
-            // User ID
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -450,10 +655,7 @@ class _UserListScreenState extends ConsumerState<UserListScreen>
                 ),
               ),
             ),
-
             const SizedBox(height: 32),
-
-            // Action buttons
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
@@ -476,10 +678,7 @@ class _UserListScreenState extends ConsumerState<UserListScreen>
                 ],
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // View Profile Button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: SizedBox(
@@ -509,7 +708,6 @@ class _UserListScreenState extends ConsumerState<UserListScreen>
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () {
-            // Action handler
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('$label clicked'),

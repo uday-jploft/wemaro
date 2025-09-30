@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wemaro/providers/auth_provider.dart';
-import 'package:wemaro/spalsh_screen.dart';
+import 'package:wemaro/view/spalsh_screen.dart';
 import 'package:wemaro/view/home_screen.dart';
 import 'package:wemaro/view/auth/login_screen.dart';
 

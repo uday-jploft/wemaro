@@ -115,13 +115,14 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  Future<void> logout() async {
+  Future<void> logout(context) async {
     // Start loading
     state = state.copyWith(isLoading: true, error: null);
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_isLoggedInKey, false);
     state = const AuthState(isLoggedIn: false, isLoading: false);
+    Navigator.of(context).pushReplacementNamed('/auth_check');
   }
 }
 
